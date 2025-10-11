@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block title %}Image Generator - Advanced Multimodal AI{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f4f7fb;
+        margin: 0;
+        padding: 0;
+    }
+
+    .image-section {
+        max-width: 800px;
+        margin: 60px auto;
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        text-align: center;
+        animation: fadeIn 0.4s ease-in;
+    }
+
+    .image-section h2 {
+        color: #007bff;
+        font-size: 26px;
+        margin-bottom: 15px;
+    }
+
+    #prompt {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 15px;
+        resize: none;
+        margin-top: 10px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    #prompt:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+        outline: none;
+    }
+
+    #image-form button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        margin-top: 15px;
+        cursor: pointer;
+        transition: 0.3s ease;
+    }
+
+    #image-form button:hover {
+        background-color: #0056b3;
+    }
+
+    #image-result {
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    #image-result p {
+        font-size: 15px;
+        color: #555;
+    }
+
+    #image-result img {
+        margin-top: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 100%;
+        height: auto;
+        transition: transform 0.3s ease;
+    }
+
+    #image-result img:hover {
+        transform: scale(1.02);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="image-section">
+    <h2>🎨 Generate an Image</h2>
+    <form id="image-form">
+        <textarea id="prompt" placeholder="Describe the image you want (e.g., 'A futuristic city at sunset')..." rows="3" maxlength="1000" required></textarea>
+        <br>
+        <button type="submit">Generate Image</button>
+    </form>
+
+    <div id="image-result">
+        <!-- Generated image will appear here -->
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('image-form');
+    const promptInput = document.getElementById('prompt');
+    const resultDiv = document.getElementById('image-result');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const prompt = promptInput.value.trim();
+        if (!prompt) return;
+
+        const submitButton = form.querySelector('button');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Generating...';
+        resultDiv.innerHTML = '<p>🕒 Generating image... This may take a few seconds.</p>';
+
+        try {
+            const response = await fetch('/image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ prompt: prompt })
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                resultDiv.innerHTML = `<p style="color:red;">❌ Error: ${data.error}</p>`;
+            } else {
+                resultDiv.innerHTML = `<img src="${data.image_url}" alt="Generated Image">`;
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<p style="color:red;">⚠️ Error: ${error.message}</p>`;
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Generate Image';
+        }
+    });
+</script>
+{% endblock %}

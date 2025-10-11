@@ -1,0 +1,291 @@
+{% extends "layout.html" %}
+{% block title %}OCR - Text Extraction | Advanced Multimodal AI{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    font-family: "Poppins", sans-serif;
+    background-color: #f4f7fb;
+    margin: 0;
+    padding: 0;
+  }
+
+  #ocr-container {
+    max-width: 900px;
+    margin: 60px auto;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    padding: 35px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .title {
+    color: #007bff;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    color: #555;
+    margin-bottom: 30px;
+    font-size: 16px;
+  }
+
+  .upload-area {
+    background: #f0f3f9;
+    border: 2px dashed #007bff;
+    border-radius: 12px;
+    padding: 35px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .upload-area:hover {
+    background: #e9f2ff;
+    border-color: #0056b3;
+  }
+
+  .upload-area input {
+    display: none;
+  }
+
+  .upload-area label {
+    display: block;
+    font-weight: 500;
+    color: #007bff;
+    font-size: 16px;
+  }
+
+  .preview-section {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .preview-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    width: 200px;
+    background: #fff;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+  }
+
+  .preview-card:hover {
+    transform: scale(1.03);
+  }
+
+  .preview-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+  }
+
+  .preview-footer {
+    padding: 10px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .delete-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #d9534f;
+    transition: 0.2s;
+  }
+
+  .delete-btn:hover {
+    transform: scale(1.2);
+  }
+
+  .action-buttons {
+    margin-top: 30px;
+  }
+
+  #extract-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 12px 22px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+
+  #extract-button:hover {
+    background-color: #0056b3;
+  }
+
+  .result-section {
+    margin-top: 40px;
+    background: #f9f9ff;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: left;
+  }
+
+  .result-section h3 {
+    color: #007bff;
+    margin-bottom: 15px;
+  }
+
+  .result-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    padding: 15px;
+    border-left: 5px solid #007bff;
+  }
+
+  .result-card h4 {
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .result-card pre {
+    background: #f3f6fa;
+    padding: 12px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    color: #444;
+  }
+
+  .error {
+    color: red;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<div id="ocr-container">
+  <h2 class="title">📄 OCR Text Extraction Dashboard</h2>
+  <p class="subtitle">Upload one or more images for automatic text extraction</p>
+
+  <form id="ocr-form">
+    <div class="upload-area" id="upload-area">
+      <input type="file" id="image-input" accept="image/*" multiple required>
+      <label for="image-input">
+        <span>📁 Click to upload or drag & drop images here</span>
+      </label>
+    </div>
+
+    <div id="image-preview-section" class="preview-section"></div>
+
+    <div class="action-buttons">
+      <button type="submit" id="extract-button">🚀 Extract Text</button>
+    </div>
+  </form>
+
+  <div id="result-section" class="result-section" style="display: none;">
+    <h3>🧾 Extracted Text Results</h3>
+    <div id="results-container"></div>
+  </div>
+</div>
+
+<script>
+  const imageInput = document.getElementById('image-input');
+  const previewSection = document.getElementById('image-preview-section');
+  const form = document.getElementById('ocr-form');
+  const extractButton = document.getElementById('extract-button');
+  const resultSection = document.getElementById('result-section');
+  const resultsContainer = document.getElementById('results-container');
+
+  // Handle multiple previews
+  imageInput.addEventListener('change', (e) => {
+    previewSection.innerHTML = '';
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const card = document.createElement('div');
+        card.classList.add('preview-card');
+        card.innerHTML = `
+          <img src="${event.target.result}" alt="Preview ${index}" class="preview-img">
+          <div class="preview-footer">
+            <span>${file.name}</span>
+            <button type="button" class="delete-btn" data-index="${index}">🗑️</button>
+          </div>
+        `;
+        previewSection.appendChild(card);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // Delete preview
+  previewSection.addEventListener('click', (e) => {
+    if (e.target.classList.contains('delete-btn')) {
+      const index = e.target.dataset.index;
+      const dt = new DataTransfer();
+      const files = Array.from(imageInput.files).filter((_, i) => i != index);
+      files.forEach((f) => dt.items.add(f));
+      imageInput.files = dt.files;
+      e.target.closest('.preview-card').remove();
+    }
+  });
+
+  // Handle extraction
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const files = imageInput.files;
+    if (!files.length) return alert('Please upload at least one image.');
+
+    const formData = new FormData();
+    for (let file of files) formData.append('images', file);
+
+    extractButton.disabled = true;
+    extractButton.textContent = '⏳ Processing...';
+    resultsContainer.innerHTML = '<p>Extracting text... please wait.</p>';
+    resultSection.style.display = 'block';
+
+    try {
+      const response = await fetch('/ocr', { method: 'POST', body: formData });
+      const data = await response.json();
+
+      if (data.error) {
+        resultsContainer.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+      } else {
+        resultsContainer.innerHTML = data.results
+          .map(
+            (res, i) => `
+          <div class="result-card">
+            <h4>🖼️ Image ${i + 1}: ${res.filename}</h4>
+            <pre>${res.text}</pre>
+          </div>`
+          )
+          .join('');
+      }
+    } catch (err) {
+      resultsContainer.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+    } finally {
+      extractButton.disabled = false;
+      extractButton.textContent = '🚀 Extract Text';
+    }
+  });
+</script>
+{% endblock %}

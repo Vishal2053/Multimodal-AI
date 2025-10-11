@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - Advanced Multimodal AI{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Empowering Intelligence Across <span>Modalities</span></h1>
+  <p>Harness the power of AI for text, vision, and document understanding — all in one unified platform.</p>
+  <a href="/chat" class="cta">Get Started</a>
+</div>
+
+<div class="features">
+  <div class="card">
+    <h2>💬 Chat Assistant</h2>
+    <p>Engage in natural conversations powered by state-of-the-art language models. Get instant insights, summaries, and explanations.</p>
+    <a href="/chat">Try Chat</a>
+  </div>
+
+  <div class="card">
+    <h2>🖼️ Image Generator</h2>
+    <p>Transform your imagination into visuals. Generate creative, professional-quality images using cutting-edge AI models.</p>
+    <a href="/image">Generate Image</a>
+  </div>
+
+  <div class="card">
+    <h2>📄 OCR Extractor</h2>
+    <p>Upload any scanned document or image and extract clean, structured text instantly using advanced OCR technology.</p>
+    <a href="/ocr">Start OCR</a>
+  </div>
+</div>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 100px 20px 60px;
+    background: radial-gradient(circle at 50% 30%, #1e293b, #0f172a 80%);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    margin-bottom: 60px;
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .hero span {
+    color: #38bdf8;
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    color: #94a3b8;
+    margin: 20px auto 40px;
+    max-width: 700px;
+  }
+
+  .cta {
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    color: white;
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: 0.3s;
+  }
+
+  .cta:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+
+  .features {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .card {
+    background: #1e293b;
+    border-radius: 15px;
+    padding: 30px;
+    width: 320px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    text-align: left;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(56,189,248,0.2);
+  }
+
+  .card h2 {
+    color: #38bdf8;
+    margin-bottom: 10px;
+  }
+
+  .card p {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+
+  .card a {
+    display: inline-block;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  .card a:hover {
+    opacity: 0.85;
+  }
+</style>
+{% endblock %}
