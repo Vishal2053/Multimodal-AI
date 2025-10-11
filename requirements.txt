@@ -1,21 +1,6 @@
-# Web Framework
-Flask==3.0.0
-Werkzeug==3.0.1
-
-# Environment Variables
-python-dotenv==1.0.0
-
-# API Client & Requests
-requests==2.31.0
-g4f==0.1.9.0
-
-# File Handling & Image Processing
-Pillow==10.1.0
-
-# Security
-flask-cors==4.0.0
-
-# Performance & Async Support
-gunicorn==21.2.0
-gevent==23.9.1
-
+Flask==3.0.3
+requests==2.32.3
+python-dotenv==1.0.1
+Werkzeug==3.0.4
+g4f==0.3.3.7
+gunicorn==23.0.0
