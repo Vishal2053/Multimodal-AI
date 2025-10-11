@@ -2,5 +2,5 @@ Flask==3.0.3
 requests==2.32.3
 python-dotenv==1.0.1
 Werkzeug==3.0.4
-g4f==0.3.3.7
+g4f[all]
 gunicorn==23.0.0
