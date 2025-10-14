@@ -1,24 +1,26 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from g4f.client import Client
+from sarvamai import SarvamAI
 import requests
 import json
 import os
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import base64  # Ensure this import is present
-
+from groq import Groq
 # Load environment variables
 load_dotenv()
-
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+key = os.getenv("GROQ_API_KEY")
+sarvam_client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY"))
+client = Groq(default_headers={"Groq-Model-Version": "latest"}, api_key="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")
 
-# Create g4f client once (global for reuse)
-client = Client()
+
 
 # Home page with links to both features
 @app.route('/')
@@ -30,39 +32,46 @@ def index():
 def chat():
     if request.method == 'GET':
         return render_template('chat.html')
-    
+
     if request.method == 'POST':
-        # Try to get JSON data, fallback to form data
-        data = request.get_json(silent=True)
-        if data is None:
-            data = request.form.to_dict()
-        
-        messages = data.get('messages')
-        print(messages)  # Debugging line to check incoming messages
-        
-        if not messages:
-            # Fallback to single message for simple forms
-            single_message = data.get('message') or data.get('prompt')
-            if single_message:
-                messages = [{"role": "user", "content": single_message}]
-            else:
-                return jsonify({'error': 'No messages or message provided'}), 400
-        
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
+            data = request.get_json(silent=True)
+            if data is None:
+                data = request.form.to_dict()
+
+            messages = data.get('messages')
+            if not messages and data.get('message'):
+                messages = [{"role": "user", "content": data['message']}]
+
+            if not messages:
+                return jsonify({'error': 'No message content provided'}), 400
+
+            # ✅ Groq API call (no compound_custom)
+            completion = client.chat.completions.create(
+                model="groq/compound-mini",   # or try "mixtral-8x7b-32768" for larger model
                 messages=messages,
-                web_search=False
+                temperature=1,
+                max_completion_tokens=1024,
+                top_p=1,
+                stream=False  # You can enable streaming later
             )
-            print(response)  # Debugging line to check the response
-            bot_response = response.choices[0].message.content.strip()
-            return jsonify({'response': bot_response})
+
+            # ✅ Extract assistant’s reply
+            if completion and completion.choices:
+                bot_response = completion.choices[0].message.content
+                return jsonify({'response': bot_response})
+            else:
+                return jsonify({'error': 'No response generated'}), 500
+
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            print(f"Error in chat endpoint: {str(e)}")
+            return jsonify({'error': f'Chat processing error: {str(e)}'}), 500
+
 
 # Image generation endpoint
 @app.route('/image', methods=['GET', 'POST'])
 def image():
+    client = Client()
     if request.method == 'GET':
         return render_template('image.html')
     
@@ -89,7 +98,6 @@ def ocr():
         return render_template('ocr.html')
     
     if request.method == 'POST':
-        # Check if images were uploaded
         if 'images' not in request.files:
             return jsonify({'error': 'No image files provided'}), 400
         
@@ -100,12 +108,10 @@ def ocr():
         results = []
         for file in files:
             if file:
-                # Save the uploaded file
                 filename = secure_filename(file.filename)
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
 
-                # Process the image with the OpenRouter API
                 try:
                     with open(filepath, 'rb') as img_file:
                         img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
@@ -126,7 +132,7 @@ def ocr():
                                     "content": [
                                         {
                                             "type": "text",
-                                            "text": "Please extract and read all text from this image."
+                                            "text": "Extract all visible text clearly from this image and return plain text only."
                                         },
                                         {
                                             "type": "image_url",
@@ -139,18 +145,94 @@ def ocr():
                             ]
                         }
                     )
-                    
+                    print(response) 
                     result = response.json()
-                    extracted_text = result['choices'][0]['message']['content']
-                    results.append({'filename': filename, 'text': extracted_text})
+
+                    # ✅ Handle both success and error cases properly
+                    if response.status_code != 200:
+                        error_msg = result.get("error", {}).get("message", "API request failed.")
+                        results.append({'filename': filename, 'text': f"❌ Error: {error_msg}"})
+                    elif "choices" in result and result["choices"]:
+                        extracted_text = result["choices"][0]["message"]["content"].strip()
+                        results.append({'filename': filename, 'text': extracted_text})
+                    else:
+                        results.append({'filename': filename, 'text': "❌ No text extracted or empty response."})
 
                 except Exception as e:
-                    return jsonify({'error': str(e)}), 500
+                    results.append({'filename': filename, 'text': f"❌ Exception: {str(e)}"})
 
-                # Clean up uploaded file
-                os.remove(filepath)
+                finally:
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
 
         return jsonify({'results': results})
+    
+# Serve uploaded files (including TTS audio)
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve generated audio files."""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route('/tts', methods=['GET', 'POST'])
+def tts():
+    if request.method == 'GET':
+        return render_template('tts.html')
+
+    try:
+        data = request.get_json()
+        text = data.get("text")
+        speaker = data.get("voice", "anushka")
+        language = data.get("language", "hi-IN")
+
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
+
+        # Clean up old .wav files
+        for f in os.listdir(app.config['UPLOAD_FOLDER']):
+            if f.endswith(".wav"):
+                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], f))
+
+        filename = f"tts_output_{speaker}.wav"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Generate audio
+        response = sarvam_client.text_to_speech.convert(
+            text=text,
+            target_language_code=language,
+            speaker=speaker,
+            pitch=0,
+            pace=1,
+            loudness=1,
+            speech_sample_rate=22050,
+            enable_preprocessing=True,
+            model="bulbul:v2"
+        )
+
+        # Decode and save the first audio file
+        if hasattr(response, 'audios') and response.audios:
+            audio_base64 = response.audios[0]
+            # Fix: ensure we handle bytes properly
+            if isinstance(audio_base64, str):
+                audio_bytes = base64.b64decode(audio_base64)
+            else:
+                audio_bytes = audio_base64
+
+            with open(filepath, 'wb') as f:
+                f.write(audio_bytes)
+
+            audio_url = f"/uploads/{filename}"
+            return jsonify({
+                "audio_url": audio_url,
+                "download_url": audio_url
+            })
+        else:
+            return jsonify({"error": "No audio generated"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

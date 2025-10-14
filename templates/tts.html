@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+{% block title %}Text to Speech - Advanced Multimodal AI{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    font-family: "Poppins", sans-serif;
+    background-color: #f4f6fb;
+    margin: 0;
+    padding: 0;
+  }
+
+  #tts-container {
+    max-width: 900px;
+    margin: 50px auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .title {
+    font-size: 30px;
+    font-weight: 600;
+    color: #2d2d2d;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+
+  #text-input {
+    width: 100%;
+    min-height: 130px;
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    resize: vertical;
+    margin-bottom: 25px;
+    transition: border 0.3s ease;
+  }
+
+  #text-input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  .speaker-tabs {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .speaker-tab {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #444;
+    background: #f9f9f9;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .speaker-tab.active {
+    border-color: #007bff;
+    background: #007bff;
+    color: white;
+  }
+
+  #generate-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  #generate-button:hover {
+    background-color: #0056b3;
+  }
+
+  #generate-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .audio-section {
+    margin-top: 35px;
+    background: #f8faff;
+    border-radius: 14px;
+    padding: 25px;
+    display: none;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  }
+
+  .download-btn {
+    display: inline-block;
+    background-color: #28a745;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-top: 10px;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .download-btn:hover {
+    background-color: #218838;
+  }
+
+  audio {
+    width: 100%;
+    outline: none;
+    border-radius: 10px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div id="tts-container">
+  <h2 class="title">🎙️ Text to Speech Converter</h2>
+  <p class="subtitle">Convert your text into realistic, expressive voices in multiple Indian languages</p>
+
+  <form id="tts-form">
+    <textarea id="text-input" placeholder="Enter your text here..." required></textarea>
+
+    <div style="margin-bottom: 20px; text-align:center;">
+      <label for="language-select" style="margin-right:10px;">Select Language:</label>
+      <select id="language-select">
+        <option value="hi-IN" selected>Hindi</option>
+        <option value="en-IN">English (India)</option>
+        <option value="mr-IN">Marathi</option>
+        <option value="ta-IN">Tamil</option>
+        <option value="te-IN">Telugu</option>
+        <option value="kn-IN">Kannada</option>
+      </select>
+    </div>
+
+    <div class="speaker-tabs" id="speaker-tabs"></div>
+
+    <button type="submit" id="generate-button">🔊 Generate Speech</button>
+  </form>
+
+  <div class="audio-section" id="audio-section">
+    <h4 id="voice-name">Preview</h4>
+    <audio id="audio-player" controls></audio><br>
+    <a id="download-link" class="download-btn" href="#" download>⬇️ Download Audio</a>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('tts-form');
+const textInput = document.getElementById('text-input');
+const generateButton = document.getElementById('generate-button');
+const audioSection = document.getElementById('audio-section');
+const audioPlayer = document.getElementById('audio-player');
+const downloadLink = document.getElementById('download-link');
+const languageSelect = document.getElementById('language-select');
+const speakerTabsContainer = document.getElementById('speaker-tabs');
+
+let selectedVoice = null;
+
+// ✅ Load speakers dynamically from Flask
+async function loadSpeakers() {
+  try {
+    const res = await fetch('/api/speakers');
+    const data = await res.json();
+    speakerTabsContainer.innerHTML = '';
+
+    data.speakers.forEach((speaker, idx) => {
+      const tab = document.createElement('div');
+      tab.className = 'speaker-tab';
+      tab.dataset.voice = speaker.id;
+      tab.innerText = speaker.name;
+
+      if (idx === 0) {
+        tab.classList.add('active');
+        selectedVoice = speaker.id;
+      }
+
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.speaker-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        selectedVoice = speaker.id;
+      });
+
+      speakerTabsContainer.appendChild(tab);
+    });
+  } catch (err) {
+    console.error('Failed to load speakers:', err);
+  }
+}
+
+loadSpeakers();
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = textInput.value.trim();
+  const language = languageSelect.value;
+  if (!text || !selectedVoice) return;
+
+  generateButton.disabled = true;
+  generateButton.textContent = '⏳ Generating...';
+
+  try {
+    const response = await fetch('/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice: selectedVoice, language })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+
+    const audioUrl = data.audio_url;
+    document.getElementById('voice-name').innerText = `${selectedVoice.toUpperCase()} – Preview`;
+
+    audioPlayer.src = audioUrl + '?t=' + new Date().getTime(); // Cache-busting
+    audioPlayer.load();
+    audioSection.style.display = 'block';
+
+    downloadLink.href = data.download_url;
+    downloadLink.download = `tts_${selectedVoice}.wav`;
+
+  } catch (error) {
+    alert("❌ " + error.message);
+  } finally {
+    generateButton.disabled = false;
+    generateButton.textContent = '🔊 Generate Speech';
+  }
+});
+</script>
+{% endblock %}

@@ -122,6 +122,9 @@
         { role: "system", content: "You are a helpful assistant." }
     ];
 
+    let lastRequestTime = 0;
+    const MIN_REQUEST_INTERVAL = 1000; // 1 second
+
     function addMessage(content, isUser = true) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', isUser ? 'user' : 'bot');
@@ -141,6 +144,15 @@
         sendButton.disabled = true;
         sendButton.textContent = 'Sending...';
 
+        const now = Date.now();
+        if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+            sendButton.disabled = false;
+            sendButton.textContent = 'Send';
+            addMessage('Please wait a moment before sending another message', false);
+            return;
+        }
+        lastRequestTime = now;
+
         try {
             const response = await fetch('/chat', {
                 method: 'POST',
@@ -156,7 +168,12 @@
                 conversation.push({ role: 'assistant', content: data.response });
             }
         } catch (error) {
-            addMessage('Error: ' + error.message, false);
+            if (error.response && error.response.status === 429) {
+                // Rate limit hit
+                showError("Please wait a moment before sending another message");
+            } else {
+                showError("An error occurred. Please try again.");
+            }
         } finally {
             sendButton.disabled = false;
             sendButton.textContent = 'Send';
