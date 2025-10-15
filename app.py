@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import base64  # Ensure this import is present
 from groq import Groq
+from transcription import transcribe_file, clean_marathi_text
 # Load environment variables
 load_dotenv()
 app = Flask(__name__)
@@ -17,8 +18,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 key = os.getenv("GROQ_API_KEY")
+print(key)
 sarvam_client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY"))
-client = Groq(default_headers={"Groq-Model-Version": "latest"}, api_key="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")
+client = Groq(default_headers={"Groq-Model-Version": "latest"}, api_key=os.getenv("GROQ_API_KEY"))
 
 
 
@@ -232,7 +234,31 @@ def tts():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/transcribe", methods=["GET", "POST"])
+def transcribe():
+    if request.method == "GET":
+        return render_template("transcribe.html")
 
+    # POST: handle file upload and transcription
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+
+    try:
+        transcript = clean_marathi_text(transcribe_file(filepath))
+        return jsonify({"transcribed_text": transcript})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
 if __name__ == '__main__':
     app.run(debug=True)

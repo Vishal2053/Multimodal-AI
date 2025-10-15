@@ -141,7 +141,7 @@
     <textarea id="text-input" placeholder="Enter your text here..." required></textarea>
 
     <div style="margin-bottom: 20px; text-align:center;">
-      <label for="language-select" style="margin-right:10px;">Select Language:</label>
+      <label for="language-select" style="margin-right:10px;"><b>Select Language:</b></label>
       <select id="language-select">
         <option value="hi-IN" selected>Hindi</option>
         <option value="en-IN">English (India)</option>
@@ -152,7 +152,15 @@
       </select>
     </div>
 
-    <div class="speaker-tabs" id="speaker-tabs"></div>
+    <div class="speaker-tabs" id="speaker-tabs">
+      <div class="speaker-tab active" data-voice="anushka">Anushka</div>
+      <div class="speaker-tab" data-voice="vidya">Vidya</div>
+      <div class="speaker-tab" data-voice="manisha">Manisha</div>
+      <div class="speaker-tab" data-voice="arya">Arya</div>
+      <div class="speaker-tab" data-voice="abhilash">Abhilash</div>
+      <div class="speaker-tab" data-voice="karun">Karun</div>
+      <div class="speaker-tab" data-voice="hitesh">Hitesh</div>
+    </div>
 
     <button type="submit" id="generate-button">🔊 Generate Speech</button>
   </form>
@@ -172,48 +180,23 @@ const audioSection = document.getElementById('audio-section');
 const audioPlayer = document.getElementById('audio-player');
 const downloadLink = document.getElementById('download-link');
 const languageSelect = document.getElementById('language-select');
-const speakerTabsContainer = document.getElementById('speaker-tabs');
+const speakerTabs = document.querySelectorAll('.speaker-tab');
 
-let selectedVoice = null;
+let selectedVoice = 'anushka';
 
-// ✅ Load speakers dynamically from Flask
-async function loadSpeakers() {
-  try {
-    const res = await fetch('/api/speakers');
-    const data = await res.json();
-    speakerTabsContainer.innerHTML = '';
-
-    data.speakers.forEach((speaker, idx) => {
-      const tab = document.createElement('div');
-      tab.className = 'speaker-tab';
-      tab.dataset.voice = speaker.id;
-      tab.innerText = speaker.name;
-
-      if (idx === 0) {
-        tab.classList.add('active');
-        selectedVoice = speaker.id;
-      }
-
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.speaker-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        selectedVoice = speaker.id;
-      });
-
-      speakerTabsContainer.appendChild(tab);
-    });
-  } catch (err) {
-    console.error('Failed to load speakers:', err);
-  }
-}
-
-loadSpeakers();
+speakerTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    speakerTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    selectedVoice = tab.dataset.voice;
+  });
+});
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = textInput.value.trim();
   const language = languageSelect.value;
-  if (!text || !selectedVoice) return;
+  if (!text) return;
 
   generateButton.disabled = true;
   generateButton.textContent = '⏳ Generating...';
@@ -231,12 +214,17 @@ form.addEventListener('submit', async (e) => {
     const audioUrl = data.audio_url;
     document.getElementById('voice-name').innerText = `${selectedVoice.toUpperCase()} – Preview`;
 
-    audioPlayer.src = audioUrl + '?t=' + new Date().getTime(); // Cache-busting
+    audioPlayer.src = audioUrl + '?t=' + new Date().getTime(); // cache-busting
     audioPlayer.load();
     audioSection.style.display = 'block';
 
     downloadLink.href = data.download_url;
     downloadLink.download = `tts_${selectedVoice}.wav`;
+
+    // Wait for audio metadata before playing
+    audioPlayer.addEventListener('loadedmetadata', () => {
+      audioPlayer.play();
+    });
 
   } catch (error) {
     alert("❌ " + error.message);

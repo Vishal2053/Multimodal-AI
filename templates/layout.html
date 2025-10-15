@@ -37,16 +37,65 @@
       color: #a855f7;
     }
 
-    nav a {
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .nav-links a {
       color: #e2e8f0;
       text-decoration: none;
-      margin: 0 15px;
       font-weight: 500;
       transition: color 0.3s;
     }
 
-    nav a:hover {
+    .nav-links a:hover {
       color: #38bdf8;
+    }
+
+    /* Hamburger menu for mobile */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+      gap: 5px;
+    }
+
+    .hamburger div {
+      width: 25px;
+      height: 3px;
+      background-color: #e2e8f0;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+
+    /* Mobile menu hidden by default */
+    @media (max-width: 768px) {
+      nav {
+        padding: 15px 20px;
+      }
+
+      .nav-links {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: #1e293b;
+        flex-direction: column;
+        width: 200px;
+        padding: 20px;
+        border-radius: 8px;
+        display: none;
+        gap: 10px;
+      }
+
+      .nav-links.active {
+        display: flex;
+      }
+
+      .hamburger {
+        display: flex;
+      }
     }
 
     main {
@@ -59,17 +108,34 @@
 <body>
   <nav>
     <div class="logo">Advanced <span>Multimodal AI</span></div>
-    <div class="nav-links">
+    <div class="hamburger" id="hamburger">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <div class="nav-links" id="nav-links">
       <a href="/">Home</a>
       <a href="/chat">Chat</a>
       <a href="/image">Image</a>
       <a href="/ocr">OCR</a>
       <a href="/tts">Text to Speech</a>
+      <a href="/transcribe">Transcribe</a>
     </div>
   </nav>
 
   <main>
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+      // Animate hamburger
+      hamburger.classList.toggle('toggle');
+    });
+  </script>
 </body>
 </html>

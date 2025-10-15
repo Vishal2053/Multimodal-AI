@@ -9,34 +9,82 @@
   <a href="/chat" class="cta">Get Started</a>
 </div>
 
-<div class="features">
-  <div class="card">
-    <h2>💬 Chat Assistant</h2>
-    <p>Engage in natural conversations powered by state-of-the-art language models. Get instant insights, summaries, and explanations.</p>
-    <a href="/chat">Try Chat</a>
-  </div>
+<!-- Core Features Section -->
+<section class="section">
+  <h2 class="section-title">🚀 Core Features</h2>
+  <div class="card-grid">
+    <div class="card">
+      <h2>💬 Chat Assistant</h2>
+      <p>Engage in natural conversations powered by state-of-the-art language models. Get instant insights, summaries, and explanations.</p>
+      <a href="/chat">Try Chat</a>
+    </div>
 
-  <div class="card">
-    <h2>🖼️ Image Generator</h2>
-    <p>Transform your imagination into visuals. Generate creative, professional-quality images using cutting-edge AI models.</p>
-    <a href="/image">Generate Image</a>
-  </div>
+    <div class="card">
+      <h2>🖼️ Image Generator</h2>
+      <p>Transform your imagination into visuals. Generate creative, professional-quality images using cutting-edge AI models.</p>
+      <a href="/image">Generate Image</a>
+    </div>
 
-  <div class="card">
-    <h2>📄 OCR Extractor</h2>
-    <p>Upload any scanned document or image and extract clean, structured text instantly using advanced OCR technology.</p>
-    <a href="/ocr">Start OCR</a>
-  </div>
+    <div class="card">
+      <h2>📄 OCR Extractor</h2>
+      <p>Upload any scanned document or image and extract clean, structured text instantly using advanced OCR technology.</p>
+      <a href="/ocr">Start OCR</a>
+    </div>
 
+    <div class="card">
+      <h2>🎙️ Text to Speech</h2>
+      <p>Convert your text into natural-sounding speech with multiple voice options and language support.</p>
+      <a href="/tts">Convert Text</a>
+    </div>
 
-  <div class="card">
-    <h2>🎙️ Text to Speech</h2>
-    <p>Convert your text into natural-sounding speech with multiple voice options and language support.</p>
-    <a href="/tts">Convert Text</a>
+    <div class="card">
+      <h2>📝 Transcribe (Audio & Video)</h2>
+      <p>Upload audio or video files and get accurate transcriptions with speaker separation and timestamps.</p>
+      <a href="/transcribe">Start Transcription</a>
+    </div>
+
   </div>
-</div>
+</section>
+
+<!-- Billing Section -->
+<section class="section billing">
+  <h2 class="section-title">💳 Billing & Plans</h2>
+  <p class="section-subtitle">Choose a plan that suits your needs — from free access to premium AI capabilities.</p>
+
+  <div class="card-grid">
+    <div class="billing-card">
+      <h3>Free Plan</h3>
+      <p>Access basic features like Chat and OCR.</p>
+      <h4>$0 / month</h4>
+      <button>Get Started</button>
+    </div>
+
+    <div class="billing-card">
+      <h3>Pro Plan</h3>
+      <p>Unlock Image Generation and Text-to-Speech with priority access.</p>
+      <h4>$9.99 / month</h4>
+      <button>Upgrade</button>
+    </div>
+
+    <div class="billing-card">
+      <h3>Enterprise Plan</h3>
+      <p>For teams and developers. Full access, API usage, and support.</p>
+      <h4>Custom Pricing</h4>
+      <button>Contact Sales</button>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-content">
+    <h3><span class="logo-text">Advanced</span> Multimodal AI</h3>
+    <p>© 2025 Advanced Multimodal AI. All rights reserved.</p>
+  </div>
+</footer>
 
 <style>
+  /* Hero Section */
   .hero {
     text-align: center;
     padding: 100px 20px 60px;
@@ -78,18 +126,48 @@
     transform: scale(1.05);
   }
 
-  .features {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
+  /* Shared Section Layout */
+  .section {
+    margin: 60px auto;
+    padding: 0 100px;
+    max-width: 1300px;
   }
 
+  .section-title {
+    color: #38bdf8;
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .section-subtitle {
+    color: #94a3b8;
+    margin-bottom: 40px;
+  }
+
+  /* Grid Layout (3 per row) */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+  }
+
+  @media (max-width: 1024px) {
+    .card-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Feature Cards */
   .card {
     background: #1e293b;
     border-radius: 15px;
     padding: 30px;
-    width: 320px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     text-align: left;
     transition: transform 0.3s, box-shadow 0.3s;
@@ -123,6 +201,76 @@
 
   .card a:hover {
     opacity: 0.85;
+  }
+
+  /* Billing Cards (Aligned with Features) */
+  .billing {
+    margin-top: 80px;
+  }
+
+  .billing-card {
+    background: #1e293b;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    color: #cbd5e1;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .billing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(168,85,247,0.2);
+  }
+
+  .billing-card h3 {
+    color: #38bdf8;
+    margin-bottom: 10px;
+  }
+
+  .billing-card h4 {
+    color: #f8fafc;
+    margin: 15px 0;
+    font-size: 1.3rem;
+  }
+
+  .billing-card button {
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .billing-card button:hover {
+    opacity: 0.9;
+  }
+
+  /* Footer */
+  footer {
+    background: #0f172a;
+    padding: 30px;
+    text-align: center;
+    margin-top: 80px;
+    border-top: 1px solid #1e293b;
+  }
+
+  .footer-content h3 {
+    color: #f8fafc;
+    font-size: 1.4rem;
+    margin-bottom: 5px;
+  }
+
+  .footer-content .logo-text {
+    color: #38bdf8;
+  }
+
+  .footer-content p {
+    color: #94a3b8;
+    font-size: 0.9rem;
   }
 </style>
 {% endblock %}
