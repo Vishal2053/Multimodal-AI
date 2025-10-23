@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block title %}YouTube Explorer{% endblock %}
+
+{% block content %}
+<div class="yt-container">
+  <h1 class="yt-title">🎬 YouTube Explorer</h1>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search videos..." />
+    <button onclick="searchVideos()">🔍 Search</button>
+    <button onclick="loadRandom()">🎲 Random</button>
+  </div>
+
+  <div id="videoList" class="video-grid"></div>
+
+  <div id="playerModal" class="player-modal" style="display:none;">
+    <div class="player-content">
+      <span class="close" onclick="closePlayer()">×</span>
+      <iframe id="ytPlayer" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<style>
+  .yt-container {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 20px;
+    color: #f8fafc;
+  }
+  .yt-title {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    color: #38bdf8;
+  }
+  .search-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .search-bar input {
+    width: 400px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    background: #1e293b;
+    color: white;
+  }
+  .search-bar button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+  }
+  .video-card {
+    background: #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s;
+    cursor: pointer;
+  }
+  .video-card:hover {
+    transform: translateY(-5px);
+  }
+  .video-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+  }
+  .video-info {
+    padding: 10px 15px;
+  }
+  .video-info h3 {
+    color: #f8fafc;
+    font-size: 1rem;
+    margin: 0;
+    margin-bottom: 5px;
+  }
+  .video-info p {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+  .player-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  .player-content {
+    position: relative;
+    width: 80%;
+    max-width: 900px;
+  }
+  #ytPlayer {
+    width: 100%;
+    height: 500px;
+    border-radius: 10px;
+  }
+  .close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    font-size: 2rem;
+    cursor: pointer;
+    color: white;
+  }
+</style>
+
+<script>
+async function searchVideos() {
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return alert("Please enter a search term!");
+  const res = await fetch(`/youtube/search?q=${encodeURIComponent(query)}`);
+  const data = await res.json();
+  displayVideos(data);
+}
+
+async function loadRandom() {
+  const res = await fetch('/youtube/random');
+  const data = await res.json();
+  displayVideos(data);
+}
+
+function displayVideos(videos) {
+  const container = document.getElementById('videoList');
+  container.innerHTML = "";
+  if (!videos.length) {
+    container.innerHTML = "<p style='text-align:center;'>No videos found.</p>";
+    return;
+  }
+
+  videos.forEach(v => {
+    const div = document.createElement('div');
+    div.className = "video-card";
+    div.innerHTML = `
+      <img src="${v.thumbnail}" alt="Thumbnail" onclick="playVideo('${v.video_id}')">
+      <div class="video-info">
+        <h3>${v.title}</h3>
+        <p>${v.channel}</p>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function playVideo(videoId) {
+  const player = document.getElementById('ytPlayer');
+  player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1`;
+  document.getElementById('playerModal').style.display = 'flex';
+}
+
+function closePlayer() {
+  const modal = document.getElementById('playerModal');
+  const player = document.getElementById('ytPlayer');
+  player.src = "";
+  modal.style.display = 'none';
+}
+
+// Load random videos on page load
+window.onload = loadRandom;
+</script>
+{% endblock %}

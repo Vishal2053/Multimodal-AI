@@ -1,1 +1,5 @@
 .env
+env
+faiss_index
+__pycache__
+vector_db

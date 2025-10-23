@@ -9,8 +9,17 @@ from werkzeug.utils import secure_filename
 import base64  # Ensure this import is present
 from groq import Groq
 from transcription import transcribe_file, clean_marathi_text
+from googleapiclient.discovery import build
+import random
+
 # Load environment variables
 load_dotenv()
+
+# YouTube API setup
+API_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE = build("youtube", "v3", developerKey=API_KEY)
+
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -259,6 +268,160 @@ def transcribe():
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
+
+
+@app.route('/chatdoc', methods=['GET'])
+def chatdoc_page():
+    return render_template('chatdoc.html')
+
+@app.route('/upload_doc', methods=['POST'])
+def upload_doc():
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    # Forward to rag_chat FastAPI
+    RAG_API_URL = os.getenv("RAG_API_URL", "http://127.0.0.1:8000")
+    try:
+        file_bytes = file.read()
+        files = {
+            "file": (secure_filename(file.filename), file_bytes, file.content_type or "application/pdf")
+        }
+        resp = requests.post(f"{RAG_API_URL}/upload_doc", files=files, timeout=30)
+        try:
+            payload = resp.json()
+        except Exception:
+            payload = {"status_code": resp.status_code, "text": resp.text}
+        if resp.status_code // 100 == 2:
+            return jsonify(payload)
+        else:
+            return jsonify({"error": "RAG service error", "detail": payload}), resp.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": "Failed to contact RAG service", "detail": str(e)}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/ask_doc', methods=['POST'])
+def ask_doc():
+    # Accept JSON body or form data
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    question = data.get("query") or data.get("question") or ""
+    if not question:
+        return jsonify({"error": "No question provided"}), 400
+
+    RAG_API_URL = os.getenv("RAG_API_URL", "http://127.0.0.1:8000")
+    try:
+        # Send request to the FastAPI backend
+        resp = requests.post(
+            f"{RAG_API_URL}/ask",
+            data={"question": question},
+            headers={"Accept": "application/json"},
+            timeout=30
+        )
+
+        # Try to parse JSON response
+        try:
+            payload = resp.json()
+        except Exception:
+            payload = {"text": resp.text}
+
+
+        # ✅ FIX: Standardize payload structure for frontend
+        answer = payload.get("answer")
+        print("Answer from RAG:", answer)
+        source = payload.get("source")
+
+        # ✅ Ensure the data is clean before sending back
+        if not answer:
+            answer = "No answer returned from RAG service."
+
+        return jsonify({
+            "answer": answer.strip(),
+            "source": source
+        })
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": "Failed to contact RAG service",
+            "detail": str(e)
+        }), 502
+
+    except Exception as e:
+        return jsonify({
+            "error": "Unexpected error",
+            "detail": str(e)
+        }), 500
+
+
+
+@app.route('/youtube', methods=['GET'])
+def youtube_page():
+    """Render the YouTube search UI"""
+    return render_template('youtube.html')
+
+
+@app.route('/youtube/search', methods=['GET'])
+def youtube_search():
+    """Search videos by query"""
+    query = request.args.get('q', 'AI')
+
+    try:
+        request_api = YOUTUBE.search().list(
+            q=query,
+            part="snippet",
+            maxResults=10,
+            type="video"
+        )
+        response = request_api.execute()
+
+        videos = []
+        for item in response.get("items", []):
+            videos.append({
+                "title": item["snippet"]["title"],
+                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": item["snippet"]["thumbnails"]["high"]["url"],
+                "video_url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                "video_id": item["id"]["videoId"]
+            })
+
+        return jsonify(videos)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/youtube/random', methods=['GET'])
+def youtube_random():
+    """Fetch random videos"""
+    random_topics = ["music", "tech", "sports", "news", "funny", "gaming", "AI", "education", "space"]
+    random_query = random.choice(random_topics)
+
+    try:
+        request_api = YOUTUBE.search().list(
+            q=random_query,
+            part="snippet",
+            maxResults=10,
+            type="video"
+        )
+        response = request_api.execute()
+
+        videos = []
+        for item in response.get("items", []):
+            videos.append({
+                "topic": random_query,
+                "title": item["snippet"]["title"],
+                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": item["snippet"]["thumbnails"]["medium"]["url"],
+                "video_url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                "video_id": item["id"]["videoId"]
+            })
+
+        return jsonify(videos)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)

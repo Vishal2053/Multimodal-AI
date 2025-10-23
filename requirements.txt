@@ -7,3 +7,4 @@ gunicorn==23.0.0
 sarvamai
 groq
 soniox
+google-api-python-client
