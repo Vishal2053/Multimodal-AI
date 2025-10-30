@@ -281,7 +281,7 @@ def upload_doc():
         return jsonify({"error": "No file uploaded"}), 400
 
     # Forward to rag_chat FastAPI
-    RAG_API_URL = os.getenv("RAG_API_URL", "http://127.0.0.1:8000")
+    RAG_API_URL = os.getenv("RAG_API_URL")
     try:
         file_bytes = file.read()
         files = {
@@ -309,7 +309,7 @@ def ask_doc():
     if not question:
         return jsonify({"error": "No question provided"}), 400
 
-    RAG_API_URL = os.getenv("RAG_API_URL", "http://127.0.0.1:8000")
+    RAG_API_URL = os.getenv("RAG_API_URL")
     try:
         # Send request to the FastAPI backend
         resp = requests.post(
