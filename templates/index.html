@@ -45,7 +45,7 @@
 
     <div class="card">
       <h2>📚 Chat with Docs</h2>
-      <p>Upload documents (PDF / DOCX / TXT) and ask questions — get answers with citations, summaries and source documents.</p>
+      <p>Upload documents (PDF / DOCX / TXT) and ask questions — get answers with citations, summaries, and source documents.</p>
       <a href="/chatdoc">Chat with Docs</a>
     </div>
 
@@ -54,12 +54,37 @@
       <p>Search and watch trending or random YouTube videos directly inside this platform.</p>
       <a href="/youtube">Explore Videos</a>
     </div>
+  </div>
+</section>
 
+
+<section id="how-it-works" class="how-it-works">
+  <h2 class="section-title">⚙️ How It Works</h2>
+  <p class="section-subtitle">Understand how Advanced Multimodal AI simplifies complex tasks in just a few steps.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-number">1</div>
+      <h3>Upload or Input Your Data</h3>
+      <p>Start by uploading your file, entering a prompt, or recording audio — depending on the tool you choose.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <h3>AI Processes the Request</h3>
+      <p>Our intelligent models analyze your input using advanced text, vision, or speech understanding techniques.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <h3>Get Instant, Accurate Results</h3>
+      <p>Receive high-quality outputs such as summaries, text, images, or insights — instantly and reliably.</p>
+    </div>
   </div>
 </section>
 
 <!-- Billing Section -->
-<section class="section billing">
+<section id="billing" class="section billing">
   <h2 class="section-title">💳 Billing & Plans</h2>
   <p class="section-subtitle">Choose a plan that suits your needs — from free access to premium AI capabilities.</p>
 
@@ -87,6 +112,24 @@
   </div>
 </section>
 
+<!-- 📞 Contact Section -->
+<section id="contact" class="section contact">
+  <h2 class="section-title">📞 Contact</h2>
+  <p class="section-subtitle">Let's collaborate or get in touch for AI-driven innovations!</p>
+
+  <div class="contact-details">
+    <p><strong>👤 Vishal More</strong></p>
+    <p>📍 Chh. Sambhajinagar, Maharashtra, 431001</p>
+    <p>📧 <a href="mailto:vishalbhagwanmore12@gmail.com">vishalbhagwanmore12@gmail.com</a></p>
+    <p>📞 <a href="tel:+917218724950">+91 72187 24950</a></p>
+    <p>🔗 
+      <a href="https://www.linkedin.com/in/vishal-more-4b9236228/" target="_blank">LinkedIn</a> |
+      <a href="https://github.com/Vishal2053" target="_blank">GitHub</a> |
+      <a href="https://vishal-more.vercel.app/" target="_blank">Portfolio</a>
+    </p>
+  </div>
+</section>
+
 <!-- Footer -->
 <footer>
   <div class="footer-content">
@@ -96,6 +139,10 @@
 </footer>
 
 <style>
+  html {
+    scroll-behavior: smooth;
+  }
+
   /* Hero Section */
   .hero {
     text-align: center;
@@ -215,7 +262,7 @@
     opacity: 0.85;
   }
 
-  /* Billing Cards (Aligned with Features) */
+  /* Billing Cards */
   .billing {
     margin-top: 80px;
   }
@@ -259,6 +306,85 @@
 
   .billing-card button:hover {
     opacity: 0.9;
+  }
+
+  /* Contact Section */
+  .contact {
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    color: #f8fafc;
+    text-align: center;
+  }
+
+  .contact a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .contact a:hover {
+    text-decoration: underline;
+  }
+
+  .contact-details p {
+    margin: 8px 0;
+    color: #cbd5e1;
+  }
+
+  /* How It Works Section */
+  .how-it-works {
+    text-align: center;
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 60px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    margin-bottom: 60px;
+  }
+
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+
+  .step {
+    background: #0f172a;
+    border-radius: 15px;
+    padding: 30px;
+    width: 300px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.3s;
+  }
+
+  .step:hover {
+    transform: translateY(-5px);
+  }
+
+  .step-number {
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 700;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+  }
+
+  .step h3 {
+    color: #38bdf8;
+    margin-bottom: 10px;
+  }
+
+  .step p {
+    color: #cbd5e1;
+    font-size: 0.95rem;
   }
 
   /* Footer */
