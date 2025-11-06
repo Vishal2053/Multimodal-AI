@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block title %}Login - Advanced Multimodal AI{% endblock %}
+{% block content %}
+<style>
+  .login-hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  }
+
+  .login-container {
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(56, 189, 248, 0.1);
+    color: #e2e8f0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .login-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.2);
+  }
+
+  .login-container h2 {
+    text-align: center;
+    color: #38bdf8;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  label {
+    display: block;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(56, 189, 248, 0.2);
+    background: rgba(15, 23, 42, 0.8);
+    color: #e2e8f0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  input[type="email"]:focus,
+  input[type="password"]:focus {
+    outline: none;
+    border-color: #38bdf8;
+    background: rgba(15, 23, 42, 1);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+  }
+
+  input[type="email"]::placeholder,
+  input[type="password"]::placeholder {
+    color: #64748b;
+  }
+
+  button {
+    width: 100%;
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(56, 189, 248, 0.3);
+    opacity: 0.95;
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  .register-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+  }
+
+  .register-link a {
+    color: #a855f7;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+
+  .register-link a:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+  }
+
+  .error {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #f87171;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    .login-container {
+      margin: 20px;
+      padding: 30px 20px;
+    }
+  }
+</style>
+
+<div class="login-hero">
+  <div class="login-container">
+    <h2>Welcome Back</h2>
+    {% if get_flashed_messages(category_filter=["error"]) %}
+      {% for message in get_flashed_messages(category_filter=["error"]) %}
+        <div class="error">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    <form method="POST">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" name="email" type="email" placeholder="Enter your email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Enter your password" required>
+      </div>
+      <button type="submit">Login Now</button>
+    </form>
+    <div class="register-link">
+      Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

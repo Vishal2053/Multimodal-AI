@@ -14,7 +14,6 @@
       overflow-x: hidden;
     }
 
-    /* Navbar Container */
     nav {
       display: flex;
       justify-content: space-between;
@@ -27,7 +26,6 @@
       z-index: 1000;
     }
 
-    /* Logo */
     .logo {
       display: flex;
       align-items: center;
@@ -37,7 +35,6 @@
       font-size: 1.4rem;
     }
 
-    /* Menu Center */
     .menu-center {
       display: flex;
       align-items: center;
@@ -61,7 +58,6 @@
       color: #38bdf8;
     }
 
-    /* Dropdown */
     .dropdown {
       position: relative;
     }
@@ -100,44 +96,118 @@
       color: #38bdf8;
     }
 
-    /* Right Buttons */
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
     }
 
-    .nav-right a {
+    .nav-right .nav-link {
       text-decoration: none;
       color: #e2e8f0;
       font-weight: 500;
-      transition: 0.3s;
-    }
-
-    .nav-right a:hover {
-      color: #38bdf8;
-    }
-
-    .btn-demo {
-      background: white;
-      color: #0f172a;
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
-      font-weight: 600;
-      transition: 0.3s;
+      transition: all 0.3s ease;
     }
 
-    .btn-demo:hover {
+    .nav-right .nav-link:hover {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .nav-right .login {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .nav-right .login:hover {
       background: #38bdf8;
       color: white;
     }
 
-    /* Responsive */
+    .nav-right .signup {
+      background: linear-gradient(90deg, #38bdf8, #a855f7);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .nav-right .signup:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .nav-right .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .nav-right .user-info img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
     @media (max-width: 900px) {
       .menu-center {
         display: none;
       }
+      nav {
+        padding: 12px 25px;
+      }
     }
+
+    .profile-dropdown { position: relative; display: inline-block; }
+    .profile-pic { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #38bdf8; cursor: pointer; }
+    .profile-menu {
+      display: none;
+      position: absolute;
+      top: 45px;
+      right: 0;
+      background: #1e293b;
+      border-radius: 10px;
+      min-width: 120px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .profile-menu a { display: block; color: #cbd5e1; padding: 10px 15px; text-decoration: none; }
+    .profile-menu a:hover { background: rgba(56,189,248,0.1); color: #38bdf8; }
+
+    #flash-messages {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 1001;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    #flash-messages ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #flash-messages li {
+      padding: 10px 15px;
+      margin: 5px 0;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      color: white;
+      font-weight: 500;
+    }
+    #flash-messages li.success { background: #4CAF50; }
+    #flash-messages li.error { background: #f44336; }
+    #flash-messages li.warning { background: #ff9800; }
+    #flash-messages li.info { background: #2196F3; }
   </style>
 </head>
 
@@ -147,7 +217,6 @@
 
     <div class="menu-center">
       <a href="/">Home</a>
-
       <div class="dropdown" id="services-dropdown">
         <span class="dropdown-btn">Services ▾</span>
         <div class="dropdown-content" id="dropdown-content">
@@ -158,20 +227,39 @@
           <a href="/transcribe">📝 Transcription</a>
           <a href="/chatdoc">📚 Chat with Docs</a>
           <a href="/youtube">🎥 YouTube Explorer</a>
-          
         </div>
       </div>
-      
       <a href="#how-it-works">How it Works</a>
       <a href="#billing">Billing</a>
       <a href="#contact">Contact</a>
     </div>
 
     <div class="nav-right">
-      <a href="#">Log In</a>
-      <a href="#">Sign Up</a>
+      {% if user %}
+        <div class="profile-dropdown">
+          <img src="{{ user.get('profile_image', '/static/user.png') }}" alt="Profile" class="profile-pic" id="profilePic">
+          <div class="profile-menu" id="profileMenu">
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      {% else %}
+        <a href="/login" class="nav-link login">Login</a>
+        <a href="/register" class="nav-link signup">Register</a>
+      {% endif %}
     </div>
   </nav>
+
+  <div id="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
 
   <main>
     {% block content %}{% endblock %}
@@ -191,17 +279,44 @@
     dropdown.addEventListener("mouseleave", () => {
       hideTimeout = setTimeout(() => {
         dropdownContent.classList.remove("show");
-      }, 400); // 🕒 400ms delay before hiding
+      }, 400);
     });
 
     dropdownContent.addEventListener("mouseenter", () => {
-      clearTimeout(hideTimeout); // keep open while hovering inside
+      clearTimeout(hideTimeout);
     });
 
     dropdownContent.addEventListener("mouseleave", () => {
       hideTimeout = setTimeout(() => {
         dropdownContent.classList.remove("show");
       }, 400);
+    });
+
+    const profilePic = document.getElementById("profilePic");
+    const profileMenu = document.getElementById("profileMenu");
+    if (profilePic) {
+      profilePic.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileMenu.style.display = profileMenu.style.display === "block" ? "none" : "block";
+      });
+      document.addEventListener("click", (e) => {
+        if (!profilePic.contains(e.target) && !profileMenu.contains(e.target)) {
+          profileMenu.style.display = "none";
+        }
+      });
+    }
+
+    // Auto-hide flash messages after 1 second
+    document.addEventListener('DOMContentLoaded', function() {
+      const flashContainer = document.getElementById('flash-messages');
+      if (flashContainer && flashContainer.children.length > 0) {
+        setTimeout(() => {
+          flashContainer.style.opacity = '0';
+          setTimeout(() => {
+            flashContainer.style.display = 'none';
+          }, 300); // fade out duration
+        }, 1000); // show for 1s
+      }
     });
   </script>
 </body>

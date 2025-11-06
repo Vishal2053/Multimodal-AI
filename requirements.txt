@@ -8,3 +8,5 @@ sarvamai
 groq
 soniox
 google-api-python-client
+pymongo[srv]
+cloudinary

@@ -1,19 +1,36 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, flash, redirect, url_for
 from g4f.client import Client
 from sarvamai import SarvamAI
 import requests
 import json
 import os
 from dotenv import load_dotenv
+import cloudinary
+import cloudinary.uploader
 from werkzeug.utils import secure_filename
 import base64  # Ensure this import is present
 from groq import Groq
 from transcription import transcribe_file, clean_marathi_text
 from googleapiclient.discovery import build
 import random
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from datetime import timedelta
+from mongodb import register_user, login_user, logout_user, current_user
+from functools import wraps
 
 # Load environment variables
 load_dotenv()
+
+# Cloudinary configuration: prefer single CLOUDINARY_URL or individual vars
+cloudinary_url = os.getenv("CLOUDINARY_URL")
+if cloudinary_url:
+    cloudinary.config(cloudinary_url=cloudinary_url)
+else:
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    )
 
 # YouTube API setup
 API_KEY = os.getenv("YOUTUBE_API_KEY")
@@ -23,26 +40,159 @@ YOUTUBE = build("youtube", "v3", developerKey=API_KEY)
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")
+app.permanent_session_lifetime = timedelta(days=1)
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-key = os.getenv("GROQ_API_KEY")
-print(key)
 sarvam_client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY"))
 client = Groq(default_headers={"Groq-Model-Version": "latest"}, api_key=os.getenv("GROQ_API_KEY"))
 
 
+def login_required(f):
+    """Decorator to protect routes that require login"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user():
+            flash("Please login to access this feature.", "warning")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+
+# -------------------- AUTHENTICATION ROUTES --------------------
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    user = current_user()
+    if request.method == "GET":
+        return render_template("register.html", user=user)
+
+    # Handle both JSON and form submissions
+    if request.content_type and "application/json" in request.content_type:
+        data = request.get_json()
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+        profile_image_url = data.get("profile_image")  # accept direct URL in JSON
+        if not name or not email or not password:
+            return jsonify({"status": "error", "message": "All fields are required"}), 400
+        result = register_user(name, email, password, profile_image=profile_image_url)
+        return jsonify(result)
+    else:
+        # Form submission
+        data = request.form.to_dict()
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+
+        if not name or not email or not password:
+            flash("All fields are required", "error")
+            return render_template("register.html", user=user)
+
+        # optional profile image file upload -> Cloudinary
+        profile_url = None
+        profile_file = request.files.get("profile_image")
+        if profile_file and profile_file.filename:
+            try:
+                upload_res = cloudinary.uploader.upload(
+                    profile_file,
+                    folder="multimodal_profiles",
+                    use_filename=True,
+                    unique_filename=False,
+                    overwrite=False,
+                )
+                profile_url = upload_res.get("secure_url")
+            except Exception as e:
+                print("Cloudinary upload failed:", e)
+                flash("Profile image upload failed; continuing without image.", "warning")
+
+        result = register_user(name, email, password, profile_image=profile_url)
+
+        if result.get("status") == "success":
+            flash("Successfully registered! Please login.", "success")
+            return redirect(url_for('login'))
+        else:
+            flash(result.get("message", "Registration failed"), "error")
+            return render_template("register.html", user=user)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    user = current_user()
+    if request.method == "GET":
+        return render_template("login.html", user=user)
+
+    # Handle both JSON and form submissions
+    if request.content_type and "application/json" in request.content_type:
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            return jsonify({"status": "error", "message": "Email and password are required"}), 400
+
+        result = login_user(email, password)
+        return jsonify(result)
+    else:
+        # Form submission
+        data = request.form.to_dict()
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            flash("Email and password are required", "error")
+            return render_template("login.html", user=user)
+
+        result = login_user(email, password)
+        if result.get("status") == "success":
+            # ensure session persists and template context has user
+            session.permanent = True
+            if not session.get("user"):
+                session["user"] = result.get("user")
+            flash("Successfully logged in!", "success")
+            return redirect(url_for('index'))
+        else:
+            flash(result.get("message", "Login failed"), "error")
+            return render_template("login.html", user=user)
+
+
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    logout_user()
+    flash("Successfully logged out!", "info")
+    return redirect(url_for('index'))
+
+
+@app.route("/user", methods=["GET"])
+def get_user():
+    user = current_user()
+    if user:
+        return jsonify({"logged_in": True, "user": user})
+    return jsonify({"logged_in": False})
+
+
+# make current_user() available in all templates as `user`
+@app.context_processor
+def inject_user():
+    return {"user": current_user()}
 
 # Home page with links to both features
 @app.route('/')
 def index():
-    return render_template('index.html')
+    user = current_user()
+    # show landing page for everyone; logged-in users will see profile pic / flash messages
+    return render_template('index.html', user=user)
 
 # Chatbot endpoint (now handles full conversation history)
 @app.route('/chat', methods=['GET', 'POST'])
+@login_required
 def chat():
+    user = current_user()
     if request.method == 'GET':
-        return render_template('chat.html')
+        return render_template('chat.html', user=user)
 
     if request.method == 'POST':
         try:
@@ -81,10 +231,12 @@ def chat():
 
 # Image generation endpoint
 @app.route('/image', methods=['GET', 'POST'])
+@login_required
 def image():
+    user = current_user()
     client = Client()
     if request.method == 'GET':
-        return render_template('image.html')
+        return render_template('image.html', user=user)
     
     if request.method == 'POST':
         prompt = request.form.get('prompt')
@@ -104,9 +256,11 @@ def image():
         
 
 @app.route('/ocr', methods=['GET', 'POST'])
+@login_required
 def ocr():
+    user = current_user()
     if request.method == 'GET':
-        return render_template('ocr.html')
+        return render_template('ocr.html', user=user)
     
     if request.method == 'POST':
         if 'images' not in request.files:
@@ -186,9 +340,11 @@ def uploaded_file(filename):
 
 
 @app.route('/tts', methods=['GET', 'POST'])
+@login_required
 def tts():
+    user = current_user()
     if request.method == 'GET':
-        return render_template('tts.html')
+        return render_template('tts.html', user=user)
 
     try:
         data = request.get_json()
@@ -244,9 +400,11 @@ def tts():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/transcribe", methods=["GET", "POST"])
+@login_required
 def transcribe():
+    user = current_user()
     if request.method == "GET":
-        return render_template("transcribe.html")
+        return render_template("transcribe.html", user=user)
 
     # POST: handle file upload and transcription
     if 'file' not in request.files:
@@ -271,10 +429,13 @@ def transcribe():
 
 
 @app.route('/chatdoc', methods=['GET'])
+@login_required
 def chatdoc_page():
-    return render_template('chatdoc.html')
+    user = current_user()
+    return render_template('chatdoc.html', user=user)
 
 @app.route('/upload_doc', methods=['POST'])
+@login_required
 def upload_doc():
     file = request.files.get("file")
     if not file:
@@ -302,6 +463,7 @@ def upload_doc():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/ask_doc', methods=['POST'])
+@login_required
 def ask_doc():
     # Accept JSON body or form data
     data = request.get_json(silent=True) or request.form.to_dict() or {}
@@ -355,12 +517,15 @@ def ask_doc():
 
 
 @app.route('/youtube', methods=['GET'])
+@login_required
 def youtube_page():
     """Render the YouTube search UI"""
-    return render_template('youtube.html')
+    user = current_user()
+    return render_template('youtube.html', user=user)
 
 
 @app.route('/youtube/search', methods=['GET'])
+@login_required
 def youtube_search():
     """Search videos by query"""
     query = request.args.get('q', 'AI')
@@ -391,6 +556,7 @@ def youtube_search():
 
 
 @app.route('/youtube/random', methods=['GET'])
+@login_required
 def youtube_random():
     """Fetch random videos"""
     random_topics = ["music", "tech", "sports", "news", "funny", "gaming", "AI", "education", "space"]
